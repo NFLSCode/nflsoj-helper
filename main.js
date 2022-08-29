@@ -7,10 +7,15 @@
 // @match        *://www.nfls.com.cn:20035/*
 // @match        *://192.168.188.77/*
 // @grant        GM_setClipboard
+// @require      https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js
 // @icon         https://raw.githubusercontent.com/NFLSCode/nflsoj-helper/master/icon.png
 // @icon64       https://raw.githubusercontent.com/NFLSCode/nflsoj-helper/master/icon.png
 // ==/UserScript==
 
+(function getEmail(user) {
+    var p = $.get(`${window.location.href}user/${user}`); // eslint-disable-line no-undef
+    console.log(p);
+})("278");
 var yourProfilePicture = "https://cdn.luogu.com.cn/upload/usericon/150522.png"; // white
 function getElement(request) {
     return document.getElementsByClassName(request);
