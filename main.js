@@ -44,7 +44,7 @@ if (domain == "/") {
     setTimeout(function() {
         let latest = GET(`https://api.github.com/repos/${repo}/releases/latest`).tag_name;
         console.log(latest);
-        if (versionCompare(latest.slice(1), GM_info.script.header.match(/@version +([^\n]+)\n/)[1]) && confirm(`检测到新版本 ${latest}，是否更新？`)) {
+        if (versionCompare(latest.slice(1), GM_info.script.header.match(/@version +([^\n]+)\n/)[1]) && confirm(`检测到新版本 ${latest}，是否更新？`)) { // eslint-disable-line no-undef
             window.location.href = `https://github.com/${repo}/releases/download/${GET(`https://api.github.com/repos/${repo}/releases/latest`).tag_name}/nflsoj-helper.min.user.js`;
         }
     },0);
