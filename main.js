@@ -1,79 +1,116 @@
 // ==UserScript==
-// @name         NFLSOJ helper
+// @name         NFLSOJ Helper
 // @namespace    https://github.com/NFLSCode/nflsoj-helper
-// @version      0.4.2
+// @version      VERSION
 // @description  Use NFLSOJ More Easily
 // @author       lexiyvv & ppip & GlaceonVGC & ACrazySteve
 // @match        *://www.nfls.com.cn:20035/*
 // @match        *://192.168.188.77/*
-// @grant        GM_setClipboard
 // @require      http://www.nfls.com.cn:20035/cdnjs/jquery/3.3.1/jquery.min.js
-// @icon         https://raw.githubusercontent.com/NFLSCode/nflsoj-helper/master/icon.png
-// @icon64       https://raw.githubusercontent.com/NFLSCode/nflsoj-helper/master/icon.png
+// @grant        GM_setClipboard
+// @grant        GM_info
+// @icon         https://raw.githubusercontent.com/NFLSCode/nflsoj-helper/master/images/icon.png
+// @icon64       https://raw.githubusercontent.com/NFLSCode/nflsoj-helper/master/images/icon.png
 // ==/UserScript==
 
-(function getEmail(user) {
-    var p = $.get(`${window.location.href}user/${user}`); // eslint-disable-line no-undef
-    console.log(p);
-})("278");
-var yourProfilePicture = "https://cdn.luogu.com.cn/upload/usericon/150522.png"; // white
+const domain = window.location.pathname, repo = "NFLSCode/nflsoj-helper", yourProfilePicture = "https://cdn.luogu.com.cn/upload/usericon/150522.png"; // white
+function GET(url) {
+    var result;
+    $.ajax({async: false, type: "GET", url: url, success: function(msg){result = msg;}}); // eslint-disable-line no-undef
+    return result;
+}
+function getDOM(href) {
+    return new DOMParser().parseFromString(GET(href), "text/html");
+}
 function getElement(request) {
     return document.getElementsByClassName(request);
 }
+/******************** autoupdate module ********************/
+function versionCompare(sources, dests) {
+    sources = sources.split('.');
+    dests = dests.split('.');
+    let maxL = Math.max(sources.length, dests.length);
+    for (let i = 0; i < maxL; i++) {
+        let preValue = sources.length > i ? sources[i]: 0,
+            preNum = isNaN(Number(preValue)) ? preValue.charCodeAt() : Number(preValue),
+            lastValue = dests.length > i ? dests[i] : 0,
+            lastNum = isNaN(Number(lastValue)) ? lastValue.charCodeAt() : Number(lastValue);
+        if (preNum < lastNum) return false;
+        if (preNum > lastNum) return true;
+    }
+    return false;
+}
+if (domain == "/") {
+    setTimeout(function() {
+        let latest = GET(`https://api.github.com/repos/${repo}/releases/latest`).tag_name;
+        console.log(latest);
+        if (versionCompare(latest.slice(1), GM_info.script.header.match(/@version +([^\n]+)\n/)[1]) && confirm(`检测到新版本 ${latest}，是否更新？`)) {
+            window.location.href = `https://github.com/${repo}/releases/download/${GET(`https://api.github.com/repos/${repo}/releases/latest`).tag_name}/nflsoj-helper.min.user.js`;
+        }
+    },0);
+}
+/******************** totalstyle module ********************/
 function betterBorder(p) {
     p.style.backgroundColor = "rgba(255,255,255)";
     p.style.padding = "14px";
     p.style.border = "thin solid rgba(200,200,200,0.5)";
 }
-let domain = window.location.pathname;
-if (/contests/.test(domain)) {
+if (/contests|practices/.test(domain)) {
     betterBorder(getElement("padding")[0].childNodes[1]);
-} else if (/submissions|discussion|(contest\/\d+\/(ranklist|repeat))/.test(domain)) {
+} else if (/submissions|discussion|ranklist|repeat/.test(domain)) {
     betterBorder(getElement("padding")[0].childNodes[3]);
 } else if (/cp/.test(domain)) {
     betterBorder(getElement("fixed-table-body")[0]);
 }
-if (localStorage.getItem("bgurl") && localStorage.getItem("bgurl") != "null") {
+if (localStorage.getItem("bgurl")) {
     document.body.style.backgroundImage=`url(${localStorage.getItem("bgurl")})`;
 }
-document.body.style.backgroundSize="cover";
-if (!localStorage.getItem("fgopacity")) {
-    localStorage.setItem("fgopacity", "0.8");
-}
+document.body.style.backgroundSize = "cover";
+if (!localStorage.getItem("fgopacity")) localStorage.setItem("fgopacity", "0.8");
 document.body.style.opacity = localStorage.getItem("fgopacity");
+/******************** copy module ********************/
 function addCopy(button, code) {
     button.addEventListener("click", function() {
         GM_setClipboard(code.textContent, "text"); // eslint-disable-line no-undef
         button.textContent = "Copied!";
-        setTimeout(function() {
-            button.textContent = "Copy";
-        }, 1000);
+        setTimeout(function(){button.textContent = "Copy";}, 1000);
     })
+}
+var clickCountForCode = 0;
+function formatCode() {
+    clickCountForCode ^= 1;
+    let value = getElement("ui existing segment")[0];
+    value.childNodes[4].firstChild.innerHTML = clickCountForCode ? formattedCode : unformattedCode; // eslint-disable-line no-undef
+    value.childNodes[0].childNodes[2].textContent = clickCountForCode ? "显示原始代码" : "格式化代码";
 }
 if (!(/login/.test(domain))) {
     if (/^\/submission\/\d+(\/|$)/.test(domain)) {
         let value = getElement("ui existing segment")[0];
-        value.firstChild.style.borderRadius = "0 0.28571429rem 0 0";
+        value.firstChild.style.borderRadius = "0 .28571429rem 0 0";
         value.firstChild.style.position = "unset";
         let position = value.innerHTML.search(/<\/a>/) + 4;
         value.innerHTML = `<span style="position:absolute;top:0px;right:-4px;">
-                             <div class="ui button" style="position:relative;left:4px;border-right: 1px solid rgba(0,0,0,0.6);border-radius: 0 0 0 .28571429rem;">
+                             <div class="ui button" style="position:relative;left:4px;border-right:1px solid rgba(0,0,0,0.6);border-radius:0 0 0 .28571429rem;">
                                Copy
                              </div>${value.innerHTML.slice(0, position)}
                            </span>${value.innerHTML.slice(position)}`;
         addCopy(value.firstChild.childNodes[1], value.lastChild);
+        value.childNodes[0].childNodes[2].addEventListener("click", formatCode);
     } else {
         for (let i = 0, e; i < (e = getElement("ui existing segment")).length; i++) {
-            if (/\/problem\//.test(domain)) {
-                e[i].parentNode.style.width = "50%";
+            e[i].innerHTML += `<div class="ui button" style="position:absolute;top:0px;right:-4px;border-top-left-radius:0;border-bottom-right-radius:0;">
+                                 Copy</div>`;
+            if (/\/problem\//.test(domain)) e[i].parentNode.style.width = "50%";
+            else if (e[i].firstChild.localName != "pre") {
+                var href = domain.match(/\/article\/\d+/)[0];
+                if (href) addCopy(e[i].lastChild, getDOM(window.location.origin + href + "/edit").getElementById("content"));
+                continue;
             }
-            e[i].innerHTML = `<div class="ui button" style="position:absolute;top:0px;right:-4px;border-top-left-radius:0;border-bottom-right-radius:0;">
-                                Copy
-                              </div>${e[i].innerHTML}`;
-            addCopy(e[i].firstChild, e[i].childNodes[e[i].childNodes.length / 2]);
+            addCopy(e[i].lastChild, e[i].childNodes[0]);
         }
     }
 }
+/******************** userstyle module ********************/
 function getColor(request) {
     let fir = request.match(/(?<=##)#[0-9a-fA-F]{6}/),
         res = request.match(/(?<=(?<!#)#)#[0-9a-fA-F]{6}/);
@@ -84,40 +121,95 @@ function genColorHTML(t, data, name, color) {
     return `<${t} ${data}><span style="color:${color[0]}">${name[0]}</span><span style="color:${color[1]};">${name.slice(1)}</span></${t}>`;
 }
 function getUserIcon(request) {
-    let icon = request.match(/##\{(\w+ icon)\}/);
+    let icon = request.match(/##\{([\s\S]+ icon)\}/);
     return icon ? `<i class="${icon[1]}"></i>` : null;
 }
-if (domain == "/") {
-    let tourist = {"20200131": ["black", "red"], "sszcdjr": ["black", "red"]};
-    for (var i = 1; i < 40; i += 2) {
-        let td = getElement("ui very basic center aligned table")[0].tBodies[0].childNodes[i], name = td.childNodes[3].innerText;
-        td.childNodes[3].innerHTML = genColorHTML(
-            "a", `href=${td.childNodes[3].childNodes[0].getAttribute("href")}`, name,
-            Object.prototype.hasOwnProperty.call(tourist, name) ? tourist[name] : getColor(td.childNodes[9].textContent));
-    }
-    let board = getElement("ui very basic table")[0];
-    board.innerHTML += `<h4>NFLSOJ Helper 公告</h4><hr>
-                        <a href='https://github.com/NFLSCode/nflsoj-helper/'><div class="ui button" style="position:relative;left:0px;"> 转到 NFLSOJ helper 官方主页 </div></a>
-                        <div class="ui button" style="position:relative;left:0px;">延长登录时间</div>
-                        <div class="ui button" style="position:relative;left:0px;">更换背景</div>`;
-    board.childNodes[10].addEventListener("click", function() {
-        document.cookie = `${document.cookie.match(/(^| )(login=[^;]*)(;|$)/)[2]};expires=Wed, 04 Aug 2077 01:00:00 GMT`;
-        alert("Success");
-    });
-    board.childNodes[12].addEventListener("click", function() {
-        localStorage.setItem("bgurl", prompt("请输入背景链接，想删除背景输入null，默认图片由GlaceonVGC提供",
-                                             "https://raw.githubusercontent.com/LazoCoder/Pokemon-Terminal/master/pokemonterminal/Images/Generation%20IV%20-%20Sinnoh/471.jpg"));
-        alert("Success");
-        window.location.reload();
-    });
-} else if (/^\/user\/\d+(\/|$)/.test(domain)) {
+if (/^\/user\/\d+(\/|$)/.test(domain)) {
     let imageurl = yourProfilePicture, imgPath = getElement("blurring dimmable image")[0].childNodes[3];
-    if (imgPath) {
-        imgPath.src=imageurl;
-    }
+    if (imgPath) imgPath.src=imageurl;
     let mainpage = getElement("ui bottom attached segment"),
         nameColor = genColorHTML("nobr", "", mainpage[0].innerHTML, getColor(mainpage[3].innerHTML)),
         backup = getElement("icon")[14].outerHTML, customIcon = getUserIcon(mainpage[3].innerHTML);
     mainpage[0].innerHTML = nameColor;
     getElement("header")[1].innerHTML = nameColor + " " + (customIcon ? customIcon : /(man|woman) icon/.test(backup) ? backup : "");
+} else if (domain == "/") {
+    let tourist = {"20200131": ["black", "red"], "sszcdjr": ["black", "red"], "Kevin090228" : ["black", "red"]};
+    for (let i = 1; i < 40; i += 2) {
+        let td = getElement("ui very basic center aligned table")[0].tBodies[0].childNodes[i], name = td.childNodes[3].innerText;
+        td.childNodes[3].innerHTML = genColorHTML(
+            "a", `href=${td.childNodes[3].childNodes[0].getAttribute("href")}`, name,
+            Object.prototype.hasOwnProperty.call(tourist, name) ? tourist[name] : getColor(td.childNodes[9].textContent));
+    }
 }
+Array.from(document.getElementsByClassName("ui comments")).forEach(function(value) {
+    value.style.backgroundColor = "#fff";
+    value.style.padding = "1em";
+    value.style.borderRadius = "0.28571429rem";
+    value.style.boxShadow = "0 1px 2px 0 rgb(34 36 38 / 15%)";
+    value.style.border = "1px solid rgba(34,36,38,.15)";
+});
+/******************** rank module ********************/
+if (/ranklist|repeat/.test(domain)) {
+    let head = document.getElementsByTagName("tr")[0], pos = /ranklist/.test(domain) ? head.innerHTML.indexOf("</th>") + 5 : 0;
+    if (head.innerHTML.indexOf("用户名") == -1) {
+        setTimeout(function() {
+            var name = [];
+            let arr = document.getElementsByTagName("tbody")[0].rows;
+            for (let i = 0; i < arr.length; ++i) {
+                console.log("Getting User", i);
+                let raw = GET(window.location.origin + arr[i].innerHTML.match(/\/submission\/\d+/)[0]);
+                name.push(`<td><a href="/user/${raw.match(/"userId":(\d+)/)[1]}">${raw.match(/"user":"([\s\S]+?)"/)[1]}</a></td>`);
+            }
+            head.innerHTML = head.innerHTML.slice(0, pos) + "<th>用户名</th>" + head.innerHTML.slice(pos);
+            for (let i = 0; i < arr.length; ++i) {
+                let pos = /ranklist/.test(domain) ? arr[i].innerHTML.indexOf("</td>") : 0;
+                arr[i].innerHTML = arr[i].innerHTML.slice(0, pos) + name[i] + arr[i].innerHTML.slice(pos);
+            }
+        }, 0);
+    }
+}
+/******************** dashboard ********************/
+if (domain == "/") {
+    let col = document.getElementsByClassName("eleven wide column")[0], ind = col.innerHTML.search(/<h4 class="ui top attached block header"><i class="ui signal/);
+    col.innerHTML = col.innerHTML.slice(0, ind) + `
+    <h4 class="ui top attached block header"><img src="https://raw.githubusercontent.com/${repo}/master/images/icon.png" style="width:20px;height:20px;">NFLSOJ Helper控制面板</h4>
+    <div class="ui bottom attached segment">
+        <table class="ui very basic table" style="table-layout: fixed; "><tr><td>
+        <h4 text>官网链接</text>
+        <a class="ui blue button" style="position:relative;left:20px;" href="https://github.com/${repo}/">
+            <i class="ui linkify icon"></i><text style="position:relative;left:0px;">转到 NFLSOJ Helper 官方主页</text></a>
+        <a class="ui green button" style="position:relative;left:20px;" id="l1">
+            <i class="repeat icon"></i><text style="position:relative;left:0px;">获取最新版</text>
+        </a></td></tr><tr><td>
+        <h4 text>主要功能</text>
+        <span class="ui button" style="position:relative;left:20px;" id="f1">延长登录时间</span>
+        <span class="ui button" style="position:relative;left:20px;" id="f2">更换背景</span>
+        </td></tr></table></div>` + col.innerHTML.slice(ind);
+    document.getElementById("l1").addEventListener("click", function() {
+        window.location.href = `https://github.com/${repo}/releases/download/${GET(`https://api.github.com/repos/${repo}/releases/latest`).tag_name}/nflsoj-helper.min.user.js`;
+    });
+    document.getElementById("f1").addEventListener("click", function() {
+        document.cookie = `${document.cookie.match(/(^| )(login=[^;]*)(;|$)/)[2]};expires=Wed, 04 Aug 2077 01:00:00 GMT`;
+        alert("Success");
+    });
+    document.getElementById("f2").addEventListener("click", function() {
+        localStorage.setItem("bgurl", prompt("请输入背景链接，想删除背景选择“取消”，默认图片由GlaceonVGC提供", `https://raw.githubusercontent.com/${repo}/master/images/471.jpg`));
+        alert("Success");
+        document.body.style.backgroundImage = `url(${localStorage.getItem("bgurl")})`;
+    });
+}
+/******************** BZOJ module (deserted) ********************/
+// let value = document.getElementsByClassName("ui bottom attached segment font-content")[0];
+// if (value.innerText == "题目描述") {
+//     let bzoj = GET(value.firstChild.firstChild.firstChild.href);
+//     value = value.parentNode.parentNode.parentNode;
+//     value.innerHTML = value.innerHTML.slice(
+//         0,
+//         value.innerHTML.indexOf(`</div>\n  \n  <div class="row">`) + 12
+//     ) + bzoj.slice(
+//         bzoj.indexOf(`</div><div class="row">`) + 6,
+//         bzoj.indexOf(`<div class="ui vertical footer segment">`) - 266
+//     ).replaceAll("upload/", "/bzoj/JudgeOnline/upload/") + value.innerHTML.slice(
+//         value.innerHTML.indexOf("数据范围与提示") == -1 ? value.innerHTML.indexOf(`return submit_code()`) - 158 : value.innerHTML.indexOf("数据范围与提示") - 98
+//     );
+// }
